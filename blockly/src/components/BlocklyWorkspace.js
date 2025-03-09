@@ -19,6 +19,11 @@ function BlocklyWorkspace({ setWorkspace }) {
             contents: [
               { kind: 'block', type: 'simulation_execution' },
               { kind: 'block', type: 'parameter_sweep' },
+              { kind: 'block', type: 'monte_carlo_simulation' },
+              { kind: 'block', type: 'ensemble_simulation' },
+              { kind: 'block', type: 'multiscale_simulation' },
+              { kind: 'block', type: 'sensitivity_analysis' },
+              { kind: 'block', type: 'checkpoint_restart' },
             ],
           },
           {
@@ -29,6 +34,10 @@ function BlocklyWorkspace({ setWorkspace }) {
               { kind: 'block', type: 'data_transfer' },
               { kind: 'block', type: 'etl_process' },
               { kind: 'block', type: 'data_validation' },
+              { kind: 'block', type: 'data_transformation' },
+              { kind: 'block', type: 'data_integration' },
+              { kind: 'block', type: 'data_catalog' },
+              { kind: 'block', type: 'data_visualization' },
             ],
           },
           {
@@ -38,6 +47,38 @@ function BlocklyWorkspace({ setWorkspace }) {
             contents: [
               { kind: 'block', type: 'result_interpretation' },
               { kind: 'block', type: 'model_calibration' },
+              { kind: 'block', type: 'statistical_analysis' },
+              { kind: 'block', type: 'machine_learning' },
+              { kind: 'block', type: 'uncertainty_quantification' },
+              { kind: 'block', type: 'signal_processing' },
+              { kind: 'block', type: 'optimization' },
+            ],
+          },
+          {
+            kind: 'category',
+            name: 'Workflow',
+            colour: '#A55BA5',
+            contents: [
+              { kind: 'block', type: 'error_handling' },
+              { kind: 'block', type: 'conditional_branch' },
+              { kind: 'block', type: 'parallel_execution' },
+              { kind: 'block', type: 'workflow_trigger' },
+              { kind: 'block', type: 'retry_strategy' },
+              { kind: 'block', type: 'notification' },
+              { kind: 'block', type: 'task_dependency' },
+            ],
+          },
+          {
+            kind: 'category',
+            name: 'Infrastructure',
+            colour: '#5BA5A5',
+            contents: [
+              { kind: 'block', type: 'container_execution' },
+              { kind: 'block', type: 'resource_allocation' },
+              { kind: 'block', type: 'distributed_computing' },
+              { kind: 'block', type: 'environment_setup' },
+              { kind: 'block', type: 'data_storage_config' },
+              { kind: 'block', type: 'network_config' },
             ],
           },
           {
@@ -57,7 +98,25 @@ function BlocklyWorkspace({ setWorkspace }) {
                 kind: 'block',
                 type: 'logic_operation',
               },
+              {
+                kind: 'block',
+                type: 'controls_repeat_ext',
+              },
+              {
+                kind: 'block',
+                type: 'controls_whileUntil',
+              },
+              {
+                kind: 'block',
+                type: 'controls_forEach',
+              },
             ],
+          },
+          {
+            kind: 'category',
+            name: 'Variables',
+            colour: '#A55B80',
+            custom: 'VARIABLE',
           },
         ],
       };

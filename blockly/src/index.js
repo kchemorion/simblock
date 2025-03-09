@@ -10,6 +10,8 @@ import * as Blockly from 'blockly';
 import './blocks/simulation_blocks';
 import './blocks/data_blocks';
 import './blocks/analysis_blocks';
+import './blocks/workflow_blocks';
+import './blocks/infrastructure_blocks';
 
 // Import code generators
 import './generators/python_airflow';
