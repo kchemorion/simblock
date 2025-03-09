@@ -1,0 +1,47 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.app-header {
+  background-color: #2c3e50;
+  color: white;
+  padding: 0.5rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.app-main {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.workspace-container {
+  flex: 2;
+  height: 100%;
+  position: relative;
+}
+
+.code-container {
+  flex: 1;
+  overflow: auto;
+  background-color: #f8f9fa;
+  border-left: 1px solid #e9ecef;
+}
+
+.app-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  color: #6c757d;
+  text-align: center;
+}
