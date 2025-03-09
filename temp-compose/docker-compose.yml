@@ -1,0 +1,35 @@
+version: '3'
+
+services:
+  api-server:
+    build: 
+      context: ../airflow/api
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    volumes:
+      - ../airflow/api:/app
+      - ../patterns:/patterns
+    environment:
+      - AIRFLOW_DAGS_FOLDER=/dags
+      - PATTERNS_FOLDER=/patterns
+    networks:
+      - simblock-network
+
+  blockly-ui:
+    build:
+      context: ../blockly
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    volumes:
+      - ../blockly:/app
+      - /app/node_modules
+    depends_on:
+      - api-server
+    networks:
+      - simblock-network
+
+networks:
+  simblock-network:
+    driver: bridge

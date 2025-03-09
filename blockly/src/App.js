@@ -7,11 +7,15 @@ import './App.css';
 import BlocklyWorkspace from './components/BlocklyWorkspace';
 import Toolbar from './components/Toolbar';
 import CodeView from './components/CodeView';
+import ControlPanel from './components/ControlPanel';
+import DocumentationBrowser from './components/DocumentationBrowser';
 
 // Import custom blocks
 import './blocks/simulation_blocks';
 import './blocks/data_blocks';
 import './blocks/analysis_blocks';
+import './blocks/workflow_blocks';
+import './blocks/infrastructure_blocks';
 
 // Import code generators
 import './generators/python_airflow';
@@ -20,6 +24,7 @@ function App() {
   const [workspace, setWorkspace] = useState(null);
   const [generatedCode, setGeneratedCode] = useState('');
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('code');
   
   // Generate Airflow DAG code from workspace
   const generateCode = () => {
@@ -189,6 +194,36 @@ ${code}
     reader.readAsText(file);
   };
   
+  // Deploy DAG to Airflow
+  const deployDag = async () => {
+    if (!generatedCode) return;
+    
+    try {
+      const response = await fetch('http://localhost:5000/api/deploy-dag', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dag_code: generatedCode,
+          dag_name: 'simblock_workflow.py'
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        alert('DAG deployed successfully to Airflow!');
+        // Activate the control panel tab to monitor execution
+        setActiveTab('control');
+      } else {
+        setError('Failed to deploy DAG: ' + data.error);
+      }
+    } catch (err) {
+      setError('Error connecting to Airflow API: ' + err.message);
+    }
+  };
+
   return (
     <div className="app">
       <header className="app-header">
@@ -205,8 +240,43 @@ ${code}
         <div className="workspace-container">
           <BlocklyWorkspace setWorkspace={setWorkspace} />
         </div>
-        <div className="code-container">
-          <CodeView code={generatedCode} error={error} />
+        <div className="right-panel">
+          <div className="tabs">
+            <button 
+              className={`tab ${activeTab === 'code' ? 'active' : ''}`}
+              onClick={() => setActiveTab('code')}
+            >
+              Code
+            </button>
+            <button 
+              className={`tab ${activeTab === 'control' ? 'active' : ''}`}
+              onClick={() => setActiveTab('control')}
+            >
+              Control Panel
+            </button>
+            <button 
+              className={`tab ${activeTab === 'docs' ? 'active' : ''}`}
+              onClick={() => setActiveTab('docs')}
+            >
+              Documentation
+            </button>
+          </div>
+          
+          <div className={`tab-content ${activeTab === 'code' ? 'active' : ''}`}>
+            <CodeView 
+              code={generatedCode} 
+              error={error} 
+              onDeploy={deployDag}
+            />
+          </div>
+          
+          <div className={`tab-content ${activeTab === 'control' ? 'active' : ''}`}>
+            <ControlPanel dagCode={generatedCode} />
+          </div>
+          
+          <div className={`tab-content ${activeTab === 'docs' ? 'active' : ''}`}>
+            <DocumentationBrowser />
+          </div>
         </div>
       </main>
       

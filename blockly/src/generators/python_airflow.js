@@ -484,3 +484,209 @@ def check_convergence_${modelName}():
 `;
   return code;
 };
+
+/* INFRASTRUCTURE BLOCKS */
+
+// Container Execution
+pythonGenerator['container_execution'] = function(block) {
+  const containerName = block.getFieldValue('CONTAINER_NAME');
+  const image = block.getFieldValue('IMAGE');
+  const command = block.getFieldValue('COMMAND');
+  const platform = block.getFieldValue('PLATFORM');
+  
+  let code = '';
+  
+  switch (platform) {
+    case 'DOCKER':
+      code = `
+# Task: Container Execution - Docker
+${containerName}_task = BashOperator(
+    task_id='container_${containerName}',
+    bash_command=f'docker run --rm ${image} ${command}',
+    dag=dag,
+)
+`;
+      break;
+    case 'KUBERNETES':
+      code = `
+# Task: Container Execution - Kubernetes
+from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+
+${containerName}_task = KubernetesPodOperator(
+    task_id='container_${containerName}',
+    namespace='default',
+    image='${image}',
+    cmds=['sh', '-c', '${command}'],
+    name='${containerName}',
+    is_delete_operator_pod=True,
+    in_cluster=True,
+    dag=dag,
+)
+`;
+      break;
+    case 'AWS_BATCH':
+      code = `
+# Task: Container Execution - AWS Batch
+from airflow.providers.amazon.aws.operators.batch import BatchOperator
+
+${containerName}_task = BatchOperator(
+    task_id='container_${containerName}',
+    job_name='${containerName}',
+    job_definition='${containerName}_job_def',
+    job_queue='scientific-compute-queue',
+    overrides={
+        'containerOverrides': {
+            'command': ['sh', '-c', '${command}'],
+        },
+    },
+    dag=dag,
+)
+`;
+      break;
+  }
+  
+  return code;
+};
+
+// Resource Allocation
+pythonGenerator['resource_allocation'] = function(block) {
+  const resourceType = block.getFieldValue('RESOURCE_TYPE');
+  const resourceName = block.getFieldValue('RESOURCE_NAME');
+  const cpuCount = block.getFieldValue('CPU_COUNT');
+  const memorySize = block.getFieldValue('MEMORY_SIZE');
+  const gpuCount = block.getFieldValue('GPU_COUNT');
+  const duration = block.getFieldValue('DURATION');
+  
+  let code = '';
+  
+  switch (resourceType) {
+    case 'HPC_CLUSTER':
+      code = `
+# Task: Resource Allocation - HPC Cluster
+${resourceName}_allocation_task = SSHOperator(
+    task_id='allocate_${resourceName}',
+    ssh_hook=hpc_ssh_hook,
+    command=f'salloc -N 1 -c ${cpuCount} --mem=${memorySize}G --gres=gpu:${gpuCount} -t ${duration} -J ${resourceName}',
+    dag=dag,
+)
+`;
+      break;
+    case 'CLOUD_INSTANCE':
+      code = `
+# Task: Resource Allocation - Cloud Instance
+${resourceName}_allocation_task = PythonOperator(
+    task_id='allocate_${resourceName}',
+    python_callable=provision_cloud_instance,
+    op_kwargs={
+        'instance_name': '${resourceName}',
+        'cpu_count': ${cpuCount},
+        'memory_size': ${memorySize},
+        'gpu_count': ${gpuCount},
+        'duration_hours': ${duration}
+    },
+    dag=dag,
+)
+
+# Define cloud provisioning function
+def provision_cloud_instance(instance_name, cpu_count, memory_size, gpu_count, duration_hours):
+    print(f"Provisioning cloud instance {instance_name}")
+    # Cloud provider-specific instance provisioning code would go here
+    return {'instance_id': f'{instance_name}-123', 'ip': '10.0.0.1'}
+`;
+      break;
+    case 'CONTAINER_RESOURCES':
+      code = `
+# Task: Resource Allocation - Container Resources
+# This defines resource requirements for containers
+container_resources = {
+    'name': '${resourceName}',
+    'cpu': '${cpuCount}',
+    'memory': '${memorySize}G',
+    'gpu': '${gpuCount}',
+    'timeout_seconds': ${duration} * 3600
+}
+
+# Store as an Airflow Variable for tasks to reference
+from airflow.models import Variable
+Variable.set(
+    '${resourceName}_resources',
+    container_resources,
+    serialize_json=True
+)
+`;
+      break;
+  }
+  
+  return code;
+};
+
+/* WORKFLOW BLOCKS */
+
+// Error Handling
+pythonGenerator['error_handling'] = function(block) {
+  const taskId = block.getFieldValue('TASK_ID');
+  const errorType = block.getFieldValue('ERROR_TYPE');
+  const action = block.getFieldValue('ACTION');
+  
+  let code = '';
+  
+  switch (action) {
+    case 'RETRY':
+      code = `
+# Error Handling - Retry
+${taskId}_with_retry = PythonOperator(
+    task_id='${taskId}_with_retry',
+    python_callable=handle_task_with_retry,
+    op_kwargs={
+        'task_func': ${taskId}_function,
+        'max_retries': 3,
+        'retry_delay': 60,
+        'error_type': '${errorType}'
+    },
+    dag=dag,
+)
+
+# Define retry handler function
+def handle_task_with_retry(task_func, max_retries, retry_delay, error_type):
+    import time
+    for attempt in range(max_retries):
+        try:
+            return task_func()
+        except Exception as e:
+            if attempt < max_retries - 1:
+                print(f"Task failed with error: {e}. Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print(f"Task failed after {max_retries} attempts.")
+                raise
+`;
+      break;
+    case 'SKIP':
+      code = `
+# Error Handling - Skip
+${taskId}_with_skip = PythonOperator(
+    task_id='${taskId}_with_skip',
+    python_callable=handle_task_with_skip,
+    op_kwargs={
+        'task_func': ${taskId}_function,
+        'error_type': '${errorType}'
+    },
+    dag=dag,
+)
+
+# Define skip handler function
+def handle_task_with_skip(task_func, error_type):
+    try:
+        return task_func()
+    except Exception as e:
+        if '${errorType}' in str(e) or '${errorType}' in e.__class__.__name__:
+            print(f"Skipping task due to expected error: {e}")
+            raise AirflowSkipException(f"Skipping due to expected error: {e}")
+        else:
+            raise
+`;
+      break;
+  }
+  
+  return code;
+};
