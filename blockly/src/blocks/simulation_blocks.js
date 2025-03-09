@@ -1,9 +1,16 @@
 import * as Blockly from 'blockly';
 
 /**
- * Simulation Execution Pattern
- * Represents running a simulation with given parameters
+ * Block Category: Simulation Patterns
+ * 
+ * These blocks represent common patterns used in scientific and engineering simulations.
+ * Each block encapsulates best practices for a specific simulation workflow pattern.
  */
+
+// Make sure Blockly is properly loaded
+if (typeof Blockly === 'undefined' || !Blockly.Blocks) {
+  console.error('Blockly is not properly loaded!');
+}
 Blockly.Blocks['simulation_execution'] = {
   init: function() {
     this.appendDummyInput()
@@ -19,19 +26,40 @@ Blockly.Blocks['simulation_execution'] = {
         .appendField("timeout")
         .appendField(new Blockly.FieldNumber(3600, 0), "TIMEOUT")
         .appendField("seconds");
+    
+    // Get available connections from window.SimBlockFlow.connections if it exists
+    let platformOptions = [
+      ["local machine", "LOCAL"],
+      ["HPC cluster", "HPC"],
+      ["cloud (AWS)", "AWS"],
+      ["cloud (Azure)", "AZURE"],
+      ["cloud (GCP)", "GCP"]
+    ];
+    
+    // Use connection ID dropdown that will be populated dynamically
     this.appendDummyInput()
-        .appendField("on")
-        .appendField(new Blockly.FieldDropdown([
-          ["local machine", "LOCAL"],
-          ["HPC cluster", "HPC"],
-          ["cloud (AWS)", "AWS"],
-          ["cloud (Azure)", "AZURE"],
-          ["cloud (GCP)", "GCP"]
-        ]), "PLATFORM");
+        .appendField("using connection")
+        .appendField(new Blockly.FieldDropdown(function() {
+          // This function will be called whenever the dropdown needs to be rendered
+          // Try to get connections from the global variable
+          if (window.SimBlockFlow && window.SimBlockFlow.connections) {
+            // Map connections to dropdown options
+            const connOptions = window.SimBlockFlow.connections.map(conn => {
+              return [conn.conn_id + " (" + conn.conn_type + ")", conn.conn_id];
+            });
+            
+            // Always include a "none" option
+            connOptions.unshift(["none (local execution)", "none"]);
+            
+            return connOptions.length > 1 ? connOptions : [["Add connections in Control Panel", "none"]];
+          }
+          return [["Add connections in Control Panel", "none"]];
+        }), "CONNECTION_ID");
+    
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setColour(210);
-    this.setTooltip("Execute a simulation with the given configuration.");
+    this.setTooltip("Execute a simulation with the given configuration using a connection defined in the Control Panel.");
     this.setHelpUrl("");
   }
 };
@@ -227,6 +255,231 @@ Blockly.Blocks['checkpoint_restart'] = {
     this.setNextStatement(true, null);
     this.setColour(210);
     this.setTooltip("Enable saving and resuming simulation state.");
+    this.setHelpUrl("");
+  }
+};
+
+/**
+ * CFD Simulation Pattern
+ * Specialized block for Computational Fluid Dynamics simulations
+ */
+Blockly.Blocks['cfd_simulation'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("CFD Simulation");
+    this.appendDummyInput()
+        .appendField("name")
+        .appendField(new Blockly.FieldTextInput("cfd_simulation"), "NAME");
+    this.appendDummyInput()
+        .appendField("solver")
+        .appendField(new Blockly.FieldDropdown([
+          ["OpenFOAM", "OPENFOAM"],
+          ["Fluent", "FLUENT"],
+          ["SU2", "SU2"],
+          ["custom", "CUSTOM"]
+        ]), "SOLVER");
+    this.appendDummyInput()
+        .appendField("mesh file")
+        .appendField(new Blockly.FieldTextInput("mesh.msh"), "MESH");
+    this.appendDummyInput()
+        .appendField("config file")
+        .appendField(new Blockly.FieldTextInput("cfd_config.yaml"), "CONFIG");
+    this.appendDummyInput()
+        .appendField("iterations")
+        .appendField(new Blockly.FieldNumber(1000, 1), "ITERATIONS");
+    this.appendDummyInput()
+        .appendField("convergence threshold")
+        .appendField(new Blockly.FieldNumber(1e-6, 0), "CONVERGENCE");
+    this.appendDummyInput()
+        .appendField("turbulence model")
+        .appendField(new Blockly.FieldDropdown([
+          ["k-epsilon", "K_EPSILON"],
+          ["k-omega", "K_OMEGA"],
+          ["Spalart-Allmaras", "SA"],
+          ["LES", "LES"],
+          ["DNS", "DNS"]
+        ]), "TURBULENCE");
+    
+    // Add connection field that will be populated dynamically
+    this.appendDummyInput()
+        .appendField("using connection")
+        .appendField(new Blockly.FieldDropdown(function() {
+          // This function will be called whenever the dropdown needs to be rendered
+          // Try to get connections from the global variable
+          if (window.SimBlockFlow && window.SimBlockFlow.connections) {
+            // Map connections to dropdown options
+            const connOptions = window.SimBlockFlow.connections.map(conn => {
+              return [conn.conn_id + " (" + conn.conn_type + ")", conn.conn_id];
+            });
+            
+            // Always include a "none" option
+            connOptions.unshift(["none (local execution)", "none"]);
+            
+            return connOptions.length > 1 ? connOptions : [["Add connections in Control Panel", "none"]];
+          }
+          return [["Add connections in Control Panel", "none"]];
+        }), "CONNECTION_ID");
+    
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(210);
+    this.setTooltip("Run a Computational Fluid Dynamics simulation with the specified solver.");
+    this.setHelpUrl("");
+  }
+};
+
+/**
+ * Molecular Dynamics Simulation Pattern
+ * Specialized block for Molecular Dynamics simulations
+ */
+Blockly.Blocks['molecular_dynamics'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Molecular Dynamics Simulation");
+    this.appendDummyInput()
+        .appendField("name")
+        .appendField(new Blockly.FieldTextInput("md_simulation"), "NAME");
+    this.appendDummyInput()
+        .appendField("engine")
+        .appendField(new Blockly.FieldDropdown([
+          ["GROMACS", "GROMACS"],
+          ["LAMMPS", "LAMMPS"],
+          ["NAMD", "NAMD"],
+          ["AMBER", "AMBER"],
+          ["custom", "CUSTOM"]
+        ]), "ENGINE");
+    this.appendDummyInput()
+        .appendField("topology file")
+        .appendField(new Blockly.FieldTextInput("topology.top"), "TOPOLOGY");
+    this.appendDummyInput()
+        .appendField("parameters file")
+        .appendField(new Blockly.FieldTextInput("params.mdp"), "PARAMS");
+    this.appendDummyInput()
+        .appendField("timestep (fs)")
+        .appendField(new Blockly.FieldNumber(2, 0.1), "TIMESTEP");
+    this.appendDummyInput()
+        .appendField("simulation time (ns)")
+        .appendField(new Blockly.FieldNumber(10, 0.1), "SIM_TIME");
+    this.appendDummyInput()
+        .appendField("ensemble")
+        .appendField(new Blockly.FieldDropdown([
+          ["NVT", "NVT"],
+          ["NPT", "NPT"],
+          ["NVE", "NVE"],
+          ["μVT", "UVT"]
+        ]), "ENSEMBLE");
+    
+    // Add connection field that will be populated dynamically
+    this.appendDummyInput()
+        .appendField("using connection")
+        .appendField(new Blockly.FieldDropdown(function() {
+          // This function will be called whenever the dropdown needs to be rendered
+          // Try to get connections from the global variable
+          if (window.SimBlockFlow && window.SimBlockFlow.connections) {
+            // Map connections to dropdown options
+            const connOptions = window.SimBlockFlow.connections.map(conn => {
+              return [conn.conn_id + " (" + conn.conn_type + ")", conn.conn_id];
+            });
+            
+            // Always include a "none" option
+            connOptions.unshift(["none (local execution)", "none"]);
+            
+            return connOptions.length > 1 ? connOptions : [["Add connections in Control Panel", "none"]];
+          }
+          return [["Add connections in Control Panel", "none"]];
+        }), "CONNECTION_ID");
+    
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(210);
+    this.setTooltip("Run a Molecular Dynamics simulation with the specified engine.");
+    this.setHelpUrl("");
+  }
+};
+
+/**
+ * Machine Learning Simulation Pattern
+ * Specialized block for Machine Learning workflows in simulations
+ */
+Blockly.Blocks['ml_simulation'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("ML-Enhanced Simulation");
+    this.appendDummyInput()
+        .appendField("name")
+        .appendField(new Blockly.FieldTextInput("ml_sim"), "NAME");
+    this.appendDummyInput()
+        .appendField("method")
+        .appendField(new Blockly.FieldDropdown([
+          ["surrogate model", "SURROGATE"],
+          ["physics-informed NN", "PINN"],
+          ["active learning", "ACTIVE_LEARNING"],
+          ["transfer learning", "TRANSFER"],
+          ["reinforcement learning", "RL"]
+        ]), "METHOD");
+    this.appendDummyInput()
+        .appendField("model file")
+        .appendField(new Blockly.FieldTextInput("ml_model.h5"), "MODEL_FILE");
+    this.appendDummyInput()
+        .appendField("training data")
+        .appendField(new Blockly.FieldTextInput("training_data.csv"), "TRAINING_DATA");
+    this.appendDummyInput()
+        .appendField("validation ratio")
+        .appendField(new Blockly.FieldNumber(0.2, 0, 1, 0.05), "VAL_RATIO");
+    this.appendDummyInput()
+        .appendField("framework")
+        .appendField(new Blockly.FieldDropdown([
+          ["TensorFlow", "TENSORFLOW"],
+          ["PyTorch", "PYTORCH"],
+          ["JAX", "JAX"],
+          ["scikit-learn", "SKLEARN"]
+        ]), "FRAMEWORK");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(210);
+    this.setTooltip("Enhance simulations with machine learning capabilities.");
+    this.setHelpUrl("");
+  }
+};
+
+/**
+ * Visualization Block
+ * Specialized block for scientific visualization of simulation results
+ */
+Blockly.Blocks['visualization'] = {
+  init: function() {
+    this.appendDummyInput()
+        .appendField("Visualize Results");
+    this.appendDummyInput()
+        .appendField("data source")
+        .appendField(new Blockly.FieldTextInput("results/*.vtu"), "DATA_SOURCE");
+    this.appendDummyInput()
+        .appendField("visualization tool")
+        .appendField(new Blockly.FieldDropdown([
+          ["ParaView", "PARAVIEW"],
+          ["VisIt", "VISIT"],
+          ["Matplotlib", "MATPLOTLIB"],
+          ["PyVista", "PYVISTA"],
+          ["custom", "CUSTOM"]
+        ]), "VIZ_TOOL");
+    this.appendDummyInput()
+        .appendField("output format")
+        .appendField(new Blockly.FieldDropdown([
+          ["PNG images", "PNG"],
+          ["interactive HTML", "HTML"],
+          ["MP4 video", "MP4"],
+          ["VTK files", "VTK"]
+        ]), "OUTPUT_FORMAT");
+    this.appendDummyInput()
+        .appendField("output path")
+        .appendField(new Blockly.FieldTextInput("viz_output/"), "OUTPUT_PATH");
+    this.appendDummyInput()
+        .appendField("visualization script")
+        .appendField(new Blockly.FieldTextInput("viz_script.py"), "VIZ_SCRIPT");
+    this.setPreviousStatement(true, null);
+    this.setNextStatement(true, null);
+    this.setColour(210);
+    this.setTooltip("Visualize simulation results using scientific visualization tools.");
     this.setHelpUrl("");
   }
 };

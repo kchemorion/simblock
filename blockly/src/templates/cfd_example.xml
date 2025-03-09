@@ -1,0 +1,53 @@
+<xml xmlns="https://developers.google.com/blockly/xml">
+  <block type="workflow_trigger" x="20" y="20">
+    <field name="TRIGGER_TYPE">SCHEDULED</field>
+    <field name="SCHEDULE">0 0 * * *</field>
+    <next>
+      <block type="data_transfer">
+        <field name="SOURCE">/input/mesh.msh</field>
+        <field name="DESTINATION">/work/mesh.msh</field>
+        <next>
+          <block type="environment_setup">
+            <field name="ENV_NAME">openfoam_env</field>
+            <field name="SETUP_SCRIPT">setup_openfoam.sh</field>
+            <next>
+              <block type="cfd_simulation">
+                <field name="NAME">pipe_flow</field>
+                <field name="SOLVER">OPENFOAM</field>
+                <field name="MESH">mesh.msh</field>
+                <field name="CONFIG">pipe_flow.yaml</field>
+                <field name="ITERATIONS">2000</field>
+                <field name="CONVERGENCE">1e-6</field>
+                <field name="TURBULENCE">K_EPSILON</field>
+                <next>
+                  <block type="checkpoint_restart">
+                    <field name="SIM_NAME">pipe_flow</field>
+                    <field name="FREQUENCY">30</field>
+                    <field name="CHECKPOINT_DIR">/checkpoints</field>
+                    <field name="MAX_CHECKPOINTS">5</field>
+                    <field name="RESTART_MODE">NONE</field>
+                    <next>
+                      <block type="visualization">
+                        <field name="DATA_SOURCE">results/*.vtu</field>
+                        <field name="VIZ_TOOL">PARAVIEW</field>
+                        <field name="OUTPUT_FORMAT">PNG</field>
+                        <field name="OUTPUT_PATH">viz_output/</field>
+                        <field name="VIZ_SCRIPT">visualize_flow.py</field>
+                        <next>
+                          <block type="data_transfer">
+                            <field name="SOURCE">viz_output/</field>
+                            <field name="DESTINATION">/output/viz_output/</field>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+</xml>

@@ -71,15 +71,27 @@ Blockly.Blocks['resource_allocation'] = {
           ["auto-scaling", "AUTO"],
           ["spot instances", "SPOT"]
         ]), "STRATEGY");
+        
+    // Use connection ID dropdown that will be populated dynamically
     this.appendDummyInput()
-        .appendField("provider")
-        .appendField(new Blockly.FieldDropdown([
-          ["local", "LOCAL"],
-          ["AWS", "AWS"],
-          ["Azure", "AZURE"],
-          ["GCP", "GCP"],
-          ["HPC cluster", "HPC"]
-        ]), "PROVIDER");
+        .appendField("using connection")
+        .appendField(new Blockly.FieldDropdown(function() {
+          // This function will be called whenever the dropdown needs to be rendered
+          // Try to get connections from the global variable
+          if (window.SimBlockFlow && window.SimBlockFlow.connections) {
+            // Map connections to dropdown options
+            const connOptions = window.SimBlockFlow.connections.map(conn => {
+              return [conn.conn_id + " (" + conn.conn_type + ")", conn.conn_id];
+            });
+            
+            // Always include a "none" option
+            connOptions.unshift(["none (local execution)", "none"]);
+            
+            return connOptions.length > 1 ? connOptions : [["Add connections in Control Panel", "none"]];
+          }
+          return [["Add connections in Control Panel", "none"]];
+        }), "CONNECTION_ID");
+        
     this.appendDummyInput()
         .appendField("instance/machine type")
         .appendField(new Blockly.FieldTextInput("m5.xlarge"), "INSTANCE_TYPE");
@@ -89,7 +101,7 @@ Blockly.Blocks['resource_allocation'] = {
     this.setPreviousStatement(true, null);
     this.setNextStatement(true, null);
     this.setColour(290);
-    this.setTooltip("Allocate compute resources for workflow tasks.");
+    this.setTooltip("Allocate compute resources for workflow tasks using a connection defined in the Control Panel.");
     this.setHelpUrl("");
   }
 };

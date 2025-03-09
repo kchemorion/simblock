@@ -1,0 +1,73 @@
+<xml xmlns="https://developers.google.com/blockly/xml">
+  <block type="workflow_trigger" x="20" y="20">
+    <field name="TRIGGER_TYPE">MANUAL</field>
+    <next>
+      <block type="data_validation">
+        <field name="INPUT_DATA">model.xml</field>
+        <field name="VALIDATION_SCRIPT">validate_sbml.py</field>
+        <next>
+          <block type="environment_setup">
+            <field name="ENV_NAME">systems_biology_env</field>
+            <field name="SETUP_SCRIPT">setup_combine.sh</field>
+            <next>
+              <block type="container_execution">
+                <field name="CONTAINER_NAME">sbml_simulation</field>
+                <field name="IMAGE">opencobra/cobrapy:latest</field>
+                <field name="COMMAND">python -m cobra.flux_analysis.parsimonious --sbml_path=/data/model.xml --output=/data/flux_solution.csv</field>
+                <field name="PLATFORM">DOCKER</field>
+                <next>
+                  <block type="parameter_sweep">
+                    <field name="PARAM_VAR">substrate</field>
+                    <field name="PARAM_SOURCE">LIST</field>
+                    <field name="PARAM_VALUES">"glucose", "fructose", "galactose", "mannose"</field>
+                    <field name="PARALLEL">TRUE</field>
+                    <statement name="DO">
+                      <block type="container_execution">
+                        <field name="CONTAINER_NAME">substrate_simulation</field>
+                        <field name="IMAGE">systemsbiology/tellurium:latest</field>
+                        <field name="COMMAND">python simulate_kinetics.py --model=/data/model.xml --substrate=${substrate} --output=/data/results_${substrate}.csv</field>
+                        <field name="PLATFORM">DOCKER</field>
+                      </block>
+                    </statement>
+                    <next>
+                      <block type="data_transformation">
+                        <field name="INPUT_DATA">/data/results_*.csv</field>
+                        <field name="OUTPUT_FILE">combined_results.csv</field>
+                        <field name="TRANSFORMATION_SCRIPT">combine_results.py</field>
+                        <next>
+                          <block type="data_visualization">
+                            <field name="DATA_SOURCE">combined_results.csv</field>
+                            <field name="VIZ_TYPE">LINE_PLOT</field>
+                            <field name="X_AXIS">time</field>
+                            <field name="Y_AXIS">concentration</field>
+                            <field name="OUTPUT_FILE">substrate_comparison.svg</field>
+                            <next>
+                              <block type="container_execution">
+                                <field name="CONTAINER_NAME">create_combine_archive</field>
+                                <field name="IMAGE">icep/combine-archive:latest</field>
+                                <field name="COMMAND">omex create -i /data/model.xml -i /data/combined_results.csv -i /data/substrate_comparison.svg -o /data/simulation_results.omex</field>
+                                <field name="PLATFORM">DOCKER</field>
+                                <next>
+                                  <block type="notification">
+                                    <field name="CHANNEL">EMAIL</field>
+                                    <field name="RECIPIENTS">user@example.com</field>
+                                    <field name="SUBJECT">COMBINE simulation completed</field>
+                                    <field name="MESSAGE">Your systems biology simulation is complete. Results are available as a COMBINE archive.</field>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+</xml>

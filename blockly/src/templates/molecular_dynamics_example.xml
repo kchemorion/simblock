@@ -1,0 +1,68 @@
+<xml xmlns="https://developers.google.com/blockly/xml">
+  <block type="workflow_trigger" x="20" y="20">
+    <field name="TRIGGER_TYPE">MANUAL</field>
+    <next>
+      <block type="data_validation">
+        <field name="INPUT_DATA">protein_data.pdb</field>
+        <field name="VALIDATION_SCRIPT">validate_pdb.py</field>
+        <next>
+          <block type="environment_setup">
+            <field name="ENV_NAME">gromacs_env</field>
+            <field name="SETUP_SCRIPT">load_gromacs.sh</field>
+            <next>
+              <block type="molecular_dynamics">
+                <field name="NAME">energy_minimization</field>
+                <field name="ENGINE">GROMACS</field>
+                <field name="TOPOLOGY">protein.top</field>
+                <field name="PARAMS">em.mdp</field>
+                <field name="TIMESTEP">2</field>
+                <field name="SIM_TIME">0.1</field>
+                <field name="ENSEMBLE">NVT</field>
+                <next>
+                  <block type="molecular_dynamics">
+                    <field name="NAME">equilibration</field>
+                    <field name="ENGINE">GROMACS</field>
+                    <field name="TOPOLOGY">protein.top</field>
+                    <field name="PARAMS">eq.mdp</field>
+                    <field name="TIMESTEP">2</field>
+                    <field name="SIM_TIME">1</field>
+                    <field name="ENSEMBLE">NPT</field>
+                    <next>
+                      <block type="molecular_dynamics">
+                        <field name="NAME">production</field>
+                        <field name="ENGINE">GROMACS</field>
+                        <field name="TOPOLOGY">protein.top</field>
+                        <field name="PARAMS">md.mdp</field>
+                        <field name="TIMESTEP">2</field>
+                        <field name="SIM_TIME">50</field>
+                        <field name="ENSEMBLE">NPT</field>
+                        <next>
+                          <block type="visualization">
+                            <field name="DATA_SOURCE">production.xtc</field>
+                            <field name="VIZ_TOOL">PYVISTA</field>
+                            <field name="OUTPUT_FORMAT">MP4</field>
+                            <field name="OUTPUT_PATH">viz_output/</field>
+                            <field name="VIZ_SCRIPT">visualize_md.py</field>
+                            <next>
+                              <block type="result_interpretation">
+                                <field name="INPUT_PATH">production.xtc</field>
+                                <field name="METHOD">STATS</field>
+                                <field name="PARAMETERS">rmsd,rmsf,radius_of_gyration</field>
+                                <field name="OUTPUT_FORMAT">CSV</field>
+                                <field name="OUTPUT_PATH">analysis_results.csv</field>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+</xml>

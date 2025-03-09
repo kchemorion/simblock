@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>SimBlockFlow Debug</title>
+  <script src="https://unpkg.com/blockly/blockly.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+    }
+    #blocklyDiv {
+      height: 600px;
+      width: 100%;
+    }
+    #controlPanel {
+      padding: 20px;
+      background-color: #f0f0f0;
+    }
+    #console {
+      padding: 10px;
+      background-color: black;
+      color: white;
+      font-family: monospace;
+      height: 200px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <div id="controlPanel">
+    <h1>SimBlockFlow Debug</h1>
+    <button id="loadBlocks">Load Custom Blocks</button>
+    <button id="checkForErrors">Check for Errors</button>
+  </div>
+  <div id="blocklyDiv"></div>
+  <div id="console">Debug Console:</div>
+
+  <script>
+    // Define a simple toolbox
+    const toolbox = {
+      kind: 'categoryToolbox',
+      contents: [
+        {
+          kind: 'category',
+          name: 'Logic',
+          colour: '#5C81A6',
+          contents: [
+            { kind: 'block', type: 'controls_if' },
+            { kind: 'block', type: 'controls_repeat_ext' }
+          ]
+        }
+      ]
+    };
+
+    // Inject Blockly into the page
+    const workspace = Blockly.inject('blocklyDiv', {
+      toolbox: toolbox,
+      grid: {
+        spacing: 20,
+        length: 3,
+        colour: '#ccc',
+        snap: true,
+      },
+      zoom: {
+        controls: true,
+        wheel: true,
+        startScale: 1.0,
+        maxScale: 3,
+        minScale: 0.3,
+        scaleSpeed: 1.2,
+      },
+      trashcan: true,
+    });
+
+    // Function to log to visual console
+    function logToConsole(message, isError = false) {
+      const consoleDiv = document.getElementById('console');
+      const logEntry = document.createElement('div');
+      logEntry.textContent = message;
+      if (isError) {
+        logEntry.style.color = '#ff4444';
+      }
+      consoleDiv.appendChild(logEntry);
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+
+    // Load custom blocks
+    document.getElementById('loadBlocks').addEventListener('click', async () => {
+      try {
+        logToConsole('Loading custom blocks...');
+        
+        // Define a custom block for testing
+        Blockly.Blocks['test_block'] = {
+          init: function() {
+            this.appendDummyInput()
+                .appendField("Test Block");
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(210);
+            this.setTooltip("A test block");
+            this.setHelpUrl("");
+          }
+        };
+        
+        // Define our simulation_execution block explicitly
+        Blockly.Blocks['simulation_execution'] = {
+          init: function() {
+            this.appendDummyInput()
+                .appendField("Run Simulation")
+                .appendField(new Blockly.FieldTextInput("simulation_name"), "SIM_NAME");
+            this.appendDummyInput()
+                .appendField("with config")
+                .appendField(new Blockly.FieldTextInput("config.yaml"), "CONFIG_FILE");
+            this.appendDummyInput()
+                .appendField("output to")
+                .appendField(new Blockly.FieldTextInput("/path/to/output"), "OUTPUT_DIR");
+            this.appendDummyInput()
+                .appendField("timeout")
+                .appendField(new Blockly.FieldNumber(3600, 0), "TIMEOUT")
+                .appendField("seconds");
+            
+            // Dropdown for platform
+            this.appendDummyInput()
+                .appendField("on platform")
+                .appendField(new Blockly.FieldDropdown([
+                  ["local machine", "LOCAL"],
+                  ["HPC cluster", "HPC"],
+                  ["cloud (AWS)", "AWS"],
+                  ["cloud (Azure)", "AZURE"],
+                  ["cloud (GCP)", "GCP"]
+                ]), "PLATFORM");
+                
+            this.setPreviousStatement(true, null);
+            this.setNextStatement(true, null);
+            this.setColour(210);
+            this.setTooltip("Execute a simulation with the given configuration.");
+            this.setHelpUrl("");
+          }
+        };
+
+        // Update the toolbox to include our custom blocks
+        const newToolbox = {
+          kind: 'categoryToolbox',
+          contents: [
+            {
+              kind: 'category',
+              name: 'Logic',
+              colour: '#5C81A6',
+              contents: [
+                { kind: 'block', type: 'controls_if' },
+                { kind: 'block', type: 'controls_repeat_ext' }
+              ]
+            },
+            {
+              kind: 'category',
+              name: 'Custom',
+              colour: '#5ba55b',
+              contents: [
+                { kind: 'block', type: 'test_block' },
+                { kind: 'block', type: 'simulation_execution' }
+              ]
+            }
+          ]
+        };
+
+        // Update the toolbox
+        workspace.updateToolbox(newToolbox);
+        logToConsole('Custom blocks loaded successfully!');
+      } catch (error) {
+        logToConsole('Error loading custom blocks: ' + error.message, true);
+        console.error(error);
+      }
+    });
+
+    // Check for errors
+    document.getElementById('checkForErrors').addEventListener('click', () => {
+      try {
+        logToConsole('Checking for errors...');
+        
+        // Look for undefined blocks in toolbox
+        const allBlocks = workspace.getToolbox().getToolboxItems();
+        let undefinedBlocks = [];
+        
+        allBlocks.forEach(category => {
+          if (category.getContents) {
+            const contents = category.getContents();
+            contents.forEach(item => {
+              if (item.kind === 'block' && !Blockly.Blocks[item.type]) {
+                undefinedBlocks.push(item.type);
+              }
+            });
+          }
+        });
+        
+        if (undefinedBlocks.length > 0) {
+          logToConsole('Found undefined blocks: ' + undefinedBlocks.join(', '), true);
+        } else {
+          logToConsole('No undefined blocks found in toolbox.');
+        }
+        
+        // Check for other issues
+        logToConsole('Workspace status: ' + (workspace ? 'OK' : 'Not initialized'), workspace ? false : true);
+        logToConsole('Block count: ' + workspace.getAllBlocks().length);
+        
+        // Check for Blockly errors
+        if (typeof Blockly.JavaScript !== 'undefined') {
+          logToConsole('JavaScript generator is available');
+        } else {
+          logToConsole('JavaScript generator is NOT available', true);
+        }
+        
+        logToConsole('Check completed.');
+      } catch (error) {
+        logToConsole('Error checking for issues: ' + error.message, true);
+        console.error(error);
+      }
+    });
+
+    // Log initial status
+    logToConsole('Debug environment initialized.');
+  </script>
+</body>
+</html>

@@ -1,25 +1,32 @@
 {
-  "name": "simblock",
-  "version": "0.1.0",
-  "description": "Pattern-based scientific workflow design with Google Blockly",
+  "name": "simblockflow",
+  "version": "1.0.0",
+  "description": "Pattern-based simulation workflow designer with Google Blockly",
   "main": "index.js",
   "scripts": {
     "start": "webpack-dev-server --mode development",
     "build": "webpack --mode production",
-    "test": "jest"
+    "test": "jest",
+    "lint": "eslint src/",
+    "analyze": "webpack --mode production --analyze"
   },
   "keywords": [
     "blockly",
     "workflow",
     "airflow",
     "science",
-    "simulation"
+    "simulation",
+    "computational",
+    "hpc",
+    "workflowhub"
   ],
-  "author": "Your Name",
+  "author": "SimBlockFlow Team",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.0",
     "blockly": "^10.1.0",
+    "file-saver": "^2.0.5",
+    "jszip": "^3.10.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^8.0.7"
@@ -30,10 +37,15 @@
     "@babel/preset-react": "^7.22.5",
     "babel-loader": "^9.1.2",
     "css-loader": "^6.8.1",
+    "eslint": "^8.44.0",
+    "eslint-plugin-react": "^7.32.2",
+    "file-loader": "^6.2.0",
     "html-webpack-plugin": "^5.5.3",
     "jest": "^29.5.0",
     "style-loader": "^3.3.3",
+    "url-loader": "^4.1.1",
     "webpack": "^5.88.0",
+    "webpack-bundle-analyzer": "^4.9.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
   }
